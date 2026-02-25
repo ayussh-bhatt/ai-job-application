@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from app.routes import resume, jobs, ai
 from fastapi.middleware.cors import CORSMiddleware
+from app.routes import applications
+app.include_router(applications.router)
 from dotenv import load_dotenv
 load_dotenv()
 
