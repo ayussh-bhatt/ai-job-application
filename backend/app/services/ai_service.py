@@ -32,3 +32,18 @@ def generate_cover_letter(job_title, company, skills):
 
     response = model.generate_content(prompt)
     return response.text
+
+def generate_followup_email(job_title, company):
+    prompt = f"""
+    Write a professional follow-up email for a candidate who applied for the
+    {job_title} position at {company}.
+
+    Guidelines:
+    - professional and polite tone
+    - express continued interest
+    - concise (under 120 words)
+    - suitable for sending 1 week after applying
+    """
+
+    response = model.generate_content(prompt)
+    return response.text

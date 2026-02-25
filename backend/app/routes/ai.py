@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
 from app.services.ai_service import generate_cover_letter
+from app.services.ai_service import generate_followup_email
 
 router = APIRouter(prefix="/ai", tags=["AI"])
 
@@ -17,3 +18,11 @@ def cover_letter(data: CoverLetterRequest):
         data.skills
     )
     return {"cover_letter": letter}
+
+@router.post("/follow-up")
+def follow_up(data: CoverLetterRequest):
+    email = generate_followup_email(
+        data.job_title,
+        data.company
+    )
+    return {"email": email}

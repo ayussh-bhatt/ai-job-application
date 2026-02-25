@@ -249,6 +249,27 @@ export default function Home() {
                   <option>Offer</option>
                   <option>Rejected</option>
                 </select>
+                <button
+                  onClick={async () => {
+                    const res = await fetch(
+                      "http://127.0.0.1:8000/ai/follow-up",
+                      {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          job_title: job.title,
+                          company: job.company,
+                        }),
+                      },
+                    );
+
+                    const data = await res.json();
+                    setCoverLetter(data.email);
+                  }}
+                  className="ml-4 bg-purple-600 px-3 py-1 rounded text-xs"
+                >
+                  Follow-Up Email
+                </button>
               </div>
             ))}
           </div>
