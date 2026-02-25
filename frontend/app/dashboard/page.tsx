@@ -11,6 +11,21 @@ export default function Dashboard() {
     if (!token) router.push("/login");
   }, []);
 
+  useEffect(() => {
+  const loadApplications = async () => {
+    const token = localStorage.getItem("token");
+
+    const res = await fetch("http://127.0.0.1:8000/applications/", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    const data = await res.json();
+    setAppliedJobs(data);
+  };
+
+  loadApplications();
+}, []);
+
   const [file, setFile] = useState<File | null>(null);
   const [resumeData, setResumeData] = useState<any>(null);
   const [jobs, setJobs] = useState<any[]>([]);
@@ -73,18 +88,31 @@ export default function Dashboard() {
   };
 
   // Apply & track job
-  const applyToJob = (job: any) => {
-    const exists = appliedJobs.find((j) => j.url === job.url);
-    if (exists) return;
+  const applyToJob = async (job: any) => {
+  const exists = appliedJobs.find((j) => j.url === job.url);
+  if (exists) return;
 
-    const newJob = {
-      ...job,
-      status: "Applied",
-      date: new Date().toLocaleDateString(),
-    };
-
-    setAppliedJobs([newJob, ...appliedJobs]);
+  const newJob = {
+    title: job.title,
+    company: job.company,
+    url: job.url,
+    status: "Applied",
+    date: new Date().toLocaleDateString(),
   };
+
+  const token = localStorage.getItem("token");
+
+  await fetch("http://127.0.0.1:8000/applications/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(newJob),
+  });
+
+  setAppliedJobs([newJob, ...appliedJobs]);
+};
 
   const maxScore = jobs.length
     ? Math.max(...jobs.map((j) => j.match_score))
@@ -96,6 +124,13 @@ export default function Dashboard() {
       {/* HEADER */}
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">AI Job Assistant</h1>
+
+        <button
+          onClick={() => router.push("/profile")}
+          className="bg-gray-700 px-4 py-2 rounded text-sm"
+        >
+          Profile
+        </button>
 
         <button
           onClick={() => {

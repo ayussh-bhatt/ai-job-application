@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, ForeignKey
 from app.db import Base
 
 class Application(Base):
@@ -10,6 +10,8 @@ class Application(Base):
     url = Column(String)
     status = Column(String)
     date = Column(String)
+
+    user_email = Column(String, index=True)  # link to user
 
 class User(Base):
     __tablename__ = "users"
