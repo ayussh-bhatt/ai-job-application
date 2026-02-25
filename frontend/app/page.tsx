@@ -7,7 +7,9 @@ export default function Home() {
   const [jobs, setJobs] = useState<any[]>([]);
   const [coverLetter, setCoverLetter] = useState("");
   const [loading, setLoading] = useState(false);
+  const [appliedJobs, setAppliedJobs] = useState<any[]>([]);
 
+  // Upload resume
   const uploadResume = async () => {
     if (!file) return;
 
@@ -23,6 +25,7 @@ export default function Home() {
     setResumeData(data.extracted_data);
   };
 
+  // Fetch jobs
   const fetchJobs = async () => {
     let url = "http://127.0.0.1:8000/jobs/";
 
@@ -38,6 +41,7 @@ export default function Home() {
     setJobs(data.jobs);
   };
 
+  // Generate cover letter
   const generateCoverLetter = async (job: any) => {
     setLoading(true);
     setCoverLetter("");
@@ -57,6 +61,20 @@ export default function Home() {
     const data = await res.json();
     setCoverLetter(data.cover_letter);
     setLoading(false);
+  };
+
+  // Apply & track job
+  const applyToJob = (job: any) => {
+    const exists = appliedJobs.find((j) => j.url === job.url);
+    if (exists) return;
+
+    const newJob = {
+      ...job,
+      status: "Applied",
+      date: new Date().toLocaleDateString(),
+    };
+
+    setAppliedJobs([newJob, ...appliedJobs]);
   };
 
   const maxScore = jobs.length
@@ -130,12 +148,21 @@ export default function Home() {
               Match Score: {job.match_score}
             </p>
 
-            <button
-              onClick={() => generateCoverLetter(job)}
-              className="mt-3 bg-purple-600 px-4 py-2 rounded text-sm"
-            >
-              Generate Cover Letter
-            </button>
+            <div className="flex gap-2 mt-3">
+              <button
+                onClick={() => generateCoverLetter(job)}
+                className="bg-purple-600 px-4 py-2 rounded text-sm"
+              >
+                Cover Letter
+              </button>
+
+              <button
+                onClick={() => applyToJob(job)}
+                className="bg-green-600 px-4 py-2 rounded text-sm"
+              >
+                Apply & Track
+              </button>
+            </div>
           </div>
         ))}
       </div>
@@ -143,45 +170,90 @@ export default function Home() {
       {/* Loading */}
       {loading && <p className="text-purple-400">Generating cover letter...</p>}
 
-      {/* Cover Letter */}
+      {/* Editable Cover Letter */}
       {coverLetter && (
-  <div className="bg-gray-900 p-6 rounded-lg border border-gray-700 space-y-4">
-    <h2 className="text-xl font-semibold">AI Cover Letter</h2>
+        <div className="bg-gray-900 p-6 rounded-lg border border-gray-700 space-y-4">
+          <h2 className="text-xl font-semibold">AI Cover Letter</h2>
 
-    {/* Editable Text Area */}
-    <textarea
-      value={coverLetter}
-      onChange={(e) => setCoverLetter(e.target.value)}
-      className="w-full h-60 bg-black border border-gray-700 rounded p-3 text-gray-200 resize-none focus:outline-none"
-    />
+          <textarea
+            value={coverLetter}
+            onChange={(e) => setCoverLetter(e.target.value)}
+            className="w-full h-60 bg-black border border-gray-700 rounded p-3 text-gray-200 resize-none focus:outline-none"
+          />
 
-    <div className="flex gap-3">
-      {/* Download Button */}
-      <button
-        onClick={() => {
-          const blob = new Blob([coverLetter], { type: "text/plain" });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = "cover-letter.txt";
-          a.click();
-          URL.revokeObjectURL(url);
-        }}
-        className="bg-green-600 px-4 py-2 rounded text-sm"
-      >
-        Download
-      </button>
+          <div className="flex gap-3">
+            <button
+              onClick={() => {
+                const blob = new Blob([coverLetter], {
+                  type: "text/plain",
+                });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "cover-letter.txt";
+                a.click();
+                URL.revokeObjectURL(url);
+              }}
+              className="bg-green-600 px-4 py-2 rounded text-sm"
+            >
+              Download
+            </button>
 
-      {/* Copy Button */}
-      <button
-        onClick={() => navigator.clipboard.writeText(coverLetter)}
-        className="bg-blue-600 px-4 py-2 rounded text-sm"
-      >
-        Copy
-      </button>
-    </div>
-  </div>
-)}
+            <button
+              onClick={() => navigator.clipboard.writeText(coverLetter)}
+              className="bg-blue-600 px-4 py-2 rounded text-sm"
+            >
+              Copy
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Dashboard */}
+      {appliedJobs.length > 0 && (
+        <div className="bg-gray-900 p-6 rounded-lg border border-gray-700">
+          <h2 className="text-xl font-semibold mb-4">Application Dashboard</h2>
+
+          <div className="space-y-3">
+            {appliedJobs.map((job, i) => (
+              <div
+                key={i}
+                className="border border-gray-700 rounded p-4 flex justify-between items-center"
+              >
+                <div>
+                  <p className="font-semibold">{job.title}</p>
+                  <p className="text-sm text-gray-400">{job.company}</p>
+                  <p className="text-xs text-gray-500">Applied on {job.date}</p>
+                </div>
+
+                <select
+                  value={job.status}
+                  onChange={(e) => {
+                    const updated = appliedJobs.map((j) =>
+                      j.url === job.url ? { ...j, status: e.target.value } : j,
+                    );
+                    setAppliedJobs(updated);
+                  }}
+                  className={`rounded px-2 py-1 font-semibold ${
+                    job.status === "Applied"
+                      ? "bg-yellow-600"
+                      : job.status === "Interview"
+                        ? "bg-blue-600"
+                        : job.status === "Offer"
+                          ? "bg-green-600"
+                          : "bg-red-600"
+                  }`}
+                >
+                  <option>Applied</option>
+                  <option>Interview</option>
+                  <option>Offer</option>
+                  <option>Rejected</option>
+                </select>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
