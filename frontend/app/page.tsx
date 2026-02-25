@@ -5,8 +5,9 @@ export default function Home() {
   const [file, setFile] = useState<File | null>(null);
   const [resumeData, setResumeData] = useState<any>(null);
   const [jobs, setJobs] = useState<any[]>([]);
+  const [coverLetter, setCoverLetter] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  // Upload Resume
   const uploadResume = async () => {
     if (!file) return;
 
@@ -22,7 +23,6 @@ export default function Home() {
     setResumeData(data.extracted_data);
   };
 
-  // Fetch Jobs with skills
   const fetchJobs = async () => {
     let url = "http://127.0.0.1:8000/jobs/";
 
@@ -38,7 +38,27 @@ export default function Home() {
     setJobs(data.jobs);
   };
 
-  // find highest match score
+  const generateCoverLetter = async (job: any) => {
+    setLoading(true);
+    setCoverLetter("");
+
+    const res = await fetch("http://127.0.0.1:8000/ai/cover-letter", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        job_title: job.title,
+        company: job.company,
+        skills: resumeData.skills,
+      }),
+    });
+
+    const data = await res.json();
+    setCoverLetter(data.cover_letter);
+    setLoading(false);
+  };
+
   const maxScore = jobs.length
     ? Math.max(...jobs.map((j) => j.match_score))
     : 0;
@@ -53,7 +73,6 @@ export default function Home() {
           type="file"
           onChange={(e) => setFile(e.target.files?.[0] || null)}
         />
-
         <button
           onClick={uploadResume}
           className="bg-white text-black px-4 py-2 ml-4 rounded"
@@ -68,10 +87,7 @@ export default function Home() {
           <h2 className="text-xl font-semibold mb-2">Extracted Skills</h2>
           <div className="flex flex-wrap gap-2">
             {resumeData.skills.map((skill: string, i: number) => (
-              <span
-                key={i}
-                className="bg-gray-700 px-3 py-1 rounded text-sm"
-              >
+              <span key={i} className="bg-gray-700 px-3 py-1 rounded text-sm">
                 {skill}
               </span>
             ))}
@@ -79,7 +95,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* Find Jobs Button */}
+      {/* Find Jobs */}
       <button
         onClick={fetchJobs}
         className="bg-blue-600 px-6 py-2 rounded font-semibold"
@@ -87,12 +103,12 @@ export default function Home() {
         Find Jobs
       </button>
 
-      {/* Job Listings */}
+      {/* Jobs */}
       <div className="grid gap-4">
         {jobs.map((job, i) => (
           <div
             key={i}
-            className={`border p-5 rounded-lg transition ${
+            className={`border p-5 rounded-lg ${
               job.match_score === maxScore && maxScore > 0
                 ? "border-green-500 bg-green-900/20"
                 : "border-gray-700"
@@ -100,7 +116,6 @@ export default function Home() {
           >
             <h3 className="text-lg font-bold">{job.title}</h3>
 
-            {/* Perfect Match Badge */}
             {job.match_score === maxScore && maxScore > 0 && (
               <span className="text-green-400 text-sm font-semibold">
                 ⭐ Perfect Match
@@ -111,33 +126,62 @@ export default function Home() {
               {job.company} • {job.location}
             </p>
 
-            {/* Match Score */}
             <p className="text-sm text-gray-400 mt-1">
               Match Score: {job.match_score}
             </p>
 
-            {/* Tags */}
-            <div className="flex flex-wrap gap-2 mt-3">
-              {job.tags?.map((tag: string, idx: number) => (
-                <span
-                  key={idx}
-                  className="bg-gray-700 px-2 py-1 rounded text-xs"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-
-            <a
-              href={job.url}
-              target="_blank"
-              className="text-blue-400 mt-3 inline-block"
+            <button
+              onClick={() => generateCoverLetter(job)}
+              className="mt-3 bg-purple-600 px-4 py-2 rounded text-sm"
             >
-              Apply →
-            </a>
+              Generate Cover Letter
+            </button>
           </div>
         ))}
       </div>
+
+      {/* Loading */}
+      {loading && <p className="text-purple-400">Generating cover letter...</p>}
+
+      {/* Cover Letter */}
+      {coverLetter && (
+  <div className="bg-gray-900 p-6 rounded-lg border border-gray-700 space-y-4">
+    <h2 className="text-xl font-semibold">AI Cover Letter</h2>
+
+    {/* Editable Text Area */}
+    <textarea
+      value={coverLetter}
+      onChange={(e) => setCoverLetter(e.target.value)}
+      className="w-full h-60 bg-black border border-gray-700 rounded p-3 text-gray-200 resize-none focus:outline-none"
+    />
+
+    <div className="flex gap-3">
+      {/* Download Button */}
+      <button
+        onClick={() => {
+          const blob = new Blob([coverLetter], { type: "text/plain" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "cover-letter.txt";
+          a.click();
+          URL.revokeObjectURL(url);
+        }}
+        className="bg-green-600 px-4 py-2 rounded text-sm"
+      >
+        Download
+      </button>
+
+      {/* Copy Button */}
+      <button
+        onClick={() => navigator.clipboard.writeText(coverLetter)}
+        className="bg-blue-600 px-4 py-2 rounded text-sm"
+      >
+        Copy
+      </button>
+    </div>
+  </div>
+)}
     </div>
   );
 }
