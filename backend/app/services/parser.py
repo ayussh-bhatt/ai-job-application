@@ -20,5 +20,6 @@ def parse_resume(file_bytes, filename):
 
     return {
         "skills": skills,
-        "preview": text[:500]
+        "preview": text[:500],
+        "text": text,
     }

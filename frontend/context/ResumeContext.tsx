@@ -7,6 +7,8 @@ export type JobType = {
   company: string;
   match_score?: number;
   url?: string;
+  missing_skills?: string[];
+  is_top_match?: boolean;
 };
 
 type ResumeContextType = {
@@ -19,7 +21,7 @@ type ResumeContextType = {
   resumeUploaded: boolean;
   setResumeUploaded: (val: boolean) => void;
 
-  resumeData: { skills?: string[] } | null;
+  resumeData: { skills?: string[]; text?: string } | null;
   setResumeData: (data: { skills?: string[] } | null) => void;
 
   selectedJob: JobType | null;

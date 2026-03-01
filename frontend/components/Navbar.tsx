@@ -42,12 +42,6 @@ export default function Navbar() {
                 >
                   Jobs
                 </Link>
-                <Link
-                  href="/profile"
-                  className={`text-sm font-medium ${pathname === "/profile" ? linkActive : linkInactive}`}
-                >
-                  Profile
-                </Link>
                 <button
                   onClick={() => {
                     localStorage.removeItem("token");
